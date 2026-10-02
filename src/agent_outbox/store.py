@@ -17,6 +17,7 @@ from typing import Any, Literal, cast
 Mode = Literal["retry_safe", "once"]
 MAX_INT = (1 << 63) - 1
 MAX_PAYLOAD = 65_536
+STATES = ("pending", "leased", "succeeded", "failed", "uncertain", "cancelled")
 
 
 class Conflict(ValueError):
@@ -418,6 +419,35 @@ class Outbox:
                 (intent_id,),
             ).fetchone()
             return None if row is None else dict(row)
+
+    def counts(self) -> dict[str, int]:
+        """Operational state counts; no automatic recovery or adapter execution."""
+        result = dict.fromkeys(STATES, 0)
+        with self.connect() as conn:
+            for row in conn.execute(
+                "SELECT state,count(*) FROM agent_outbox_intents GROUP BY state"
+            ):
+                result[row[0]] = row[1]
+        return result
+
+    def find(self, state: str, *, after: str = "", limit: int = 100) -> list[dict[str, Any]]:
+        """Find metadata by state, paginated by intent ID (not a snapshot)."""
+        if state not in STATES:
+            raise ValueError("Unknown state")
+        _integer(limit, "limit", 1)
+        if limit > 1000:
+            raise ValueError("At most 1000 intents per page")
+        with self.connect() as conn:
+            return [
+                dict(row)
+                for row in conn.execute(
+                    "SELECT id,scope,operation,target,mode,state,available,expires,attempts,"
+                    "max_attempts,fence,worker,lease_until,result_digest "
+                    "FROM agent_outbox_intents "
+                    "WHERE state=? AND id>? ORDER BY id LIMIT ?",
+                    (state, after, limit),
+                )
+            ]
 
     def events(self, *, after: int = 0, limit: int = 100) -> list[dict[str, Any]]:
         _integer(after, "after")

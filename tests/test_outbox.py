@@ -9,16 +9,6 @@ import pytest
 from agent_outbox import Conflict, InvalidState, Outbox, RetryableError, StaleLease, Worker
 
 
-@pytest.fixture
-def clock():
-    return [1000]
-
-
-@pytest.fixture
-def box(tmp_path, clock):
-    return Outbox(tmp_path / "outbox.sqlite", clock=lambda: clock[0])
-
-
 def put(box, *, key="job", mode="once", expires_ms=100_000, **kwargs):
     with box.connect() as conn:
         conn.execute("BEGIN IMMEDIATE")
