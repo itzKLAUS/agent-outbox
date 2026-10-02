@@ -1,0 +1,15 @@
+# Operations
+
+Use one durable local database file shared by local workers. SQLite WAL, `synchronous=FULL`, and a ten-second lock timeout are configured for each library connection. Do not host this file on NFS, copy it into independent replicas, or use it as a distributed database. Concurrent claims are serialized; throughput and production workload capacity have not been benchmarked.
+
+Filesystem permissions are the access boundary. The database contains complete tool payloads, targets, scopes and temporary lease ownership tokens. Event exports omit payloads and tokens, but target, operation, scope, worker names and evidence digests can themselves be sensitive. Use opaque identifiers, restrict exports and define retention before introducing customer data. There is no encryption-at-rest or redaction service in this package.
+
+Back up with SQLite's online backup API from a connected database, or stop all writers and back up a consistent database plus its associated WAL state. Test restore into an isolated environment with adapters disabled. A restored copy may have old leases and incomplete external acknowledgements; reconciliation against downstream receipts is required before dispatch resumes. Never run restored and original databases as independent active dispatchers.
+
+Use a synchronized wall clock in integer Unix milliseconds. Time moving backward can prolong a lease, and a forward jump can expire active work. This implementation does not persist a monotonic cross-process time source or defend against malicious clock manipulation. Under a clock incident, stop new dispatch and inspect downstream state before resuming.
+
+Monitor pending age, leased deadlines, uncertain counts, exhausted attempts, lock contention and stale acknowledgement exceptions. `events(after=cursor, limit=...)` paginates up to 1000 events; persist the last processed sequence outside the database after exporting a page. Event rows commit with their transition but are not cryptographically tamper-evident. Database owners can alter them.
+
+No purge command is included: deleting terminal intents would erase scoped idempotency protection. Define a retention period longer than downstream deduplication and client retry windows, and design an archival/tombstone migration before deleting records. The schema version is checked on open; unknown versions are refused. Future migrations require an explicit procedure and backup.
+
+Graceful shutdown should stop claims, wait for active adapters, acknowledge completed work before its lease expiry, and then close. A process killed after an external write will leave an expired lease. Retry-safe recovery needs downstream deduplication; once-mode recovery needs operator reconciliation. A timeout is not evidence of failure.
