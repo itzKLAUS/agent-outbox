@@ -13,7 +13,7 @@ dependencies = []
 dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.12,<1", "mypy>=1.18,<3", "build>=1,<2"]
 
 [build-system]
-requires = ["hatchling>=1.26,<2"]
+requires = ["hatchling>=1.32.4,<2"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
