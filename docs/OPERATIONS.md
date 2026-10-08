@@ -13,3 +13,9 @@ Monitor pending age, leased deadlines, uncertain counts, exhausted attempts, loc
 No purge command is included: deleting terminal intents would erase scoped idempotency protection. Define a retention period longer than downstream deduplication and client retry windows, and design an archival/tombstone migration before deleting records. The schema version is checked on open; unknown versions are refused. Future migrations require an explicit procedure and backup.
 
 Graceful shutdown should stop claims, wait for active adapters, acknowledge completed work before its lease expiry, and then close. A process killed after an external write will leave an expired lease. Retry-safe recovery needs downstream deduplication; once-mode recovery needs operator reconciliation. A timeout is not evidence of failure.
+
+## Verified online snapshots
+
+`box.backup("new-snapshot.sqlite")` uses the SQLite online backup API, verifies SQLite integrity and refuses existing destinations. It includes application business tables as well as intents and events. POSIX creation uses mode 0600; Windows inherits the directory ACL. Keep the backup directory private on both platforms. Source and destination paths must be on a trusted filesystem.
+
+A snapshot contains raw payloads and lease data. Do not publish it. Restore tests prove local persistence, not that historical downstream side effects can be replayed safely. Stop adapters, restore in isolation, inspect leases and uncertain actions, reconcile against the downstream system, and retire the old dispatcher before enabling the restored one.

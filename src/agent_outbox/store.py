@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import secrets
 import sqlite3
 import time
@@ -103,6 +104,8 @@ class Outbox:
     """
 
     def __init__(self, path: str | Path, *, clock: Callable[[], int] | None = None):
+        if str(path) == ":memory:":
+            raise ValueError("a durable database file is required")
         self.path = str(Path(path).resolve())
         self.clock = clock or (lambda: time.time_ns() // 1_000_000)
         with self.connect() as conn:
@@ -429,6 +432,30 @@ class Outbox:
             ):
                 result[row[0]] = row[1]
         return result
+
+    def backup(self, destination: str | Path) -> Path:
+        """Create an online, consistent SQLite snapshot without overwriting files.
+
+        The snapshot contains payloads and credentials stored by the application.
+        Restore with dispatch disabled and reconcile downstream effects first.
+        """
+        target = Path(destination).resolve()
+        # Exclusive creation also protects the live database and existing backups.
+        descriptor = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        os.close(descriptor)
+        try:
+            with self.connect() as source:
+                snapshot = sqlite3.connect(target)
+                try:
+                    source.backup(snapshot)
+                    if snapshot.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                        raise InvalidState("Backup integrity check failed")
+                finally:
+                    snapshot.close()
+        except BaseException:
+            target.unlink()
+            raise
+        return target
 
     def find(self, state: str, *, after: str = "", limit: int = 100) -> list[dict[str, Any]]:
         """Find metadata by state, paginated by intent ID (not a snapshot)."""

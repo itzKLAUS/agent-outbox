@@ -1,7 +1,7 @@
-# Reporting and handling security issues
+# Security reporting
 
-This repository is private. Report a suspected vulnerability privately to the repository owner; do not post exploit details, customer payloads or credentials in public issues.
+Report suspected vulnerabilities through [GitHub private vulnerability reporting](https://github.com/itzKLAUS/agent-outbox/security/advisories/new). Do not post exploit details, signing keys, production grants, live databases, authorization headers or customer payloads in public issues.
 
-Use synthetic data for reproductions. Preserve the affected package version, operation and transition sequence, operating system, clock behavior and downstream idempotency assumptions. Do not attach a live database or lease token.
+Include a minimal synthetic reproduction, affected version, operating system, trust boundary and expected versus actual behavior. Stop affected dispatch or admission if credentials or ledgers are exposed, and reconcile external effects before restarting.
 
-If a database or token is exposed, stop dispatch, restrict access, investigate actual downstream effects, and reconcile outstanding leases before restarting. The library has no central revocation service or authentication layer. A fence or token does not authorize an external tool call.
+Version 0.2 is the current public implementation. It is not independently audited or certified. There is no promised patch-response time or paid SLA. Review the operations and verification notes before consequential deployment. Dependencies retain their own security/support lifecycles.

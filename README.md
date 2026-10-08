@@ -1,5 +1,19 @@
 # Agent Outbox
 
+<img src="docs/assets/hero.svg" alt="agent-outbox architecture: request, enforcement, and recovery" width="100%">
+
+[![CI](https://github.com/itzKLAUS/agent-outbox/actions/workflows/check.yml/badge.svg)](https://github.com/itzKLAUS/agent-outbox/actions/workflows/check.yml) Ã‚Â· [MIT](LICENSE) Ã‚Â· [Release notes](CHANGELOG.md) Ã‚Â· [Sponsor](https://github.com/sponsors/itzKLAUS)
+
+## Install in your application
+
+Python 3.11+. This release is available from GitHub; it is not claimed to be published on PyPI.
+
+```sh
+python -m pip install "git+https://github.com/itzKLAUS/agent-outbox.git@v0.2.0"
+```
+
+For development, clone the repository, enter its directory and use the locked commands below.
+
 **Keep a business write and its intended agent action together, then recover dispatch safely.**
 
 When an automation worker crashes, a database update can survive while its tool call disappears. The reverse is equally troublesome: a tool may commit externally while its acknowledgement is lost. Agent Outbox puts the intent in the same SQLite transaction as the business write and distinguishes actions that can safely be retried from actions whose uncertain outcome must be reconciled.
@@ -18,6 +32,10 @@ This model-independent Python library implements durable dispatch, bounded attem
 - Lease renewal, cancellation of pending intents, and explicit operator reconciliation.
 - Ordered, paginated events and metadata exports that omit payloads, lease tokens and raw results.
 - Strict finite JSON payloads, size bounds, parameter validation and typed distribution.
+
+## Operational recovery
+
+`box.counts()` and `box.find("uncertain", limit=100)` give operators bounded metadata views. `box.backup("new-snapshot.sqlite")` creates a consistent online snapshot and refuses overwrites. Restore with dispatch disabled and reconcile downstream effects before enabling workers.
 
 ## Run it
 
@@ -72,7 +90,7 @@ def adapter(lease):
 Worker(box, "worker-1", adapter).step()
 ```
 
-See [integration](docs/INTEGRATION.md), [state transitions](docs/STATE_MACHINE.md), [operations](docs/OPERATIONS.md), [trust boundaries](docs/THREAT_MODEL.md) and [verification](docs/VERIFICATION.md).
+See [related work](docs/ALTERNATIVES.md), [integration](docs/INTEGRATION.md), [state transitions](docs/STATE_MACHINE.md), [operations](docs/OPERATIONS.md), [trust boundaries](docs/THREAT_MODEL.md) and [verification](docs/VERIFICATION.md).
 
 ## Recovery boundary
 
@@ -80,4 +98,4 @@ Local fences protect ledger updates. They cannot stop an old worker's already ru
 
 For a non-idempotent tool, `once` prevents automatic retries after a claim becomes ambiguous; it does not prove whether the tool ran. Resolve an uncertain intent only after checking independent downstream evidence. A crashed worker that never reached the tool can still require reconciliation. There is deliberately no automatic redrive of uncertain non-idempotent actions.
 
-Original code is private; no open-source license is granted at this stage.
+Licensed under [MIT](LICENSE). See [contributing](CONTRIBUTING.md), [support](SUPPORT.md) and [security reporting](SECURITY.md).
