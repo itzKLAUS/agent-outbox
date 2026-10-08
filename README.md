@@ -2,7 +2,7 @@
 
 <img src="docs/assets/hero.svg" alt="agent-outbox architecture: request, enforcement, and recovery" width="100%">
 
-[![CI](https://github.com/itzKLAUS/agent-outbox/actions/workflows/check.yml/badge.svg)](https://github.com/itzKLAUS/agent-outbox/actions/workflows/check.yml) Ã‚Â· [MIT](LICENSE) Ã‚Â· [Release notes](CHANGELOG.md) Ã‚Â· [Sponsor](https://github.com/sponsors/itzKLAUS)
+[![CI](https://github.com/itzKLAUS/agent-outbox/actions/workflows/check.yml/badge.svg)](https://github.com/itzKLAUS/agent-outbox/actions/workflows/check.yml) · [MIT](LICENSE) · [Release notes](CHANGELOG.md) · [Sponsor](https://github.com/sponsors/itzKLAUS)
 
 ## Install in your application
 
